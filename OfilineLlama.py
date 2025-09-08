@@ -1,7 +1,7 @@
 import tkinter as tk
 import requests
 
-# === FUNÇÃO DE RESPOSTA COM IA LOCAL ===
+# === FUNÇÃO DE RESPOSTA COM IA LOCAL ===#
 def gerar_resposta(texto):
     prompt = f"Responda em uma só frase, {texto}"
     try:
