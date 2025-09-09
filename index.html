@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Three.js - Cubo Giratório com Clique e Arraste</title>
+  <title>Three.js - Cubo Giratório com Zoom</title>
   <style>
     html, body { height: 100%; margin: 0; overflow: hidden; }
     canvas { display: block; }
@@ -65,14 +65,23 @@
         y: event.clientY - previousMousePosition.y
       };
 
-      // Rotaciona o cubo baseado na diferença do movimento do mouse
       const rotationSpeed = 0.005;
 
-      cube.rotation.y += deltaMove.x * rotationSpeed; // gira no eixo Y com movimento horizontal
-      cube.rotation.x += deltaMove.y * rotationSpeed; // gira no eixo X com movimento vertical
+      cube.rotation.y += deltaMove.x * rotationSpeed;
+      cube.rotation.x += deltaMove.y * rotationSpeed;
 
       previousMousePosition.x = event.clientX;
       previousMousePosition.y = event.clientY;
+    });
+
+    // Zoom com a roda do mouse
+    window.addEventListener('wheel', (event) => {
+      // Ajusta a posição Z da câmera com limite para não passar muito perto ou longe
+      const zoomSpeed = 0.1;
+      camera.position.z += event.deltaY * zoomSpeed;
+
+      // Limitar zoom entre 2 e 20
+      camera.position.z = Math.min(Math.max(camera.position.z, 2), 20);
     });
 
     // Ajuste responsivo
