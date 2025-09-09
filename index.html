@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Three.js - Paralelepípedo com Cilindros Agrupados com Arestas</title>
+  <title>Three.js - Paralelepípedo com 4 Cilindros nas Pontas</title>
   <style>
     html, body { height: 100%; margin: 0; overflow: hidden; }
     canvas { display: block; }
@@ -63,37 +63,27 @@
     const cylGeometry = new THREE.CylinderGeometry(cylRadius, cylRadius, cylHeight, 32);
     const cylMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
 
-    // Primeiro cilindro
-    const cilindro1 = new THREE.Mesh(cylGeometry, cylMaterial);
-    cilindro1.rotation.z = Math.PI / 2;
-    cilindro1.position.x = parWidth / 2 + cylHeight / 2;
-    cilindro1.position.y = -parHeight / 2 + cylRadius;
-    cilindro1.position.z = 0;
-    grupo.add(cilindro1);
+    // Função para criar cilindro na posição desejada
+    function criarCilindro(x, y, z) {
+      const cilindro = new THREE.Mesh(cylGeometry, cylMaterial);
+      cilindro.rotation.z = Math.PI / 2; // Deitado
+      cilindro.position.set(x, y, z);
+      grupo.add(cilindro);
+    }
 
-    // Linhas de arestas do primeiro cilindro
-    const cylEdges1 = new THREE.EdgesGeometry(cylGeometry);
-    const cylLines1 = new THREE.LineSegments(
-      cylEdges1,
-      new THREE.LineBasicMaterial({ color: 0xffffff })
-    );
-    cilindro1.add(cylLines1);
+    // Posiciona os 4 cilindros nas pontas da face lateral direita do paralelepípedo
+    // Face lateral direita está em x = parWidth/2 + cylHeight/2 (distância lateral)
+    // Pontas correspondem aos 4 cantos na face lateral: combinações de y e z
+    const posX = parWidth / 2 + cylHeight / 2;
+    const posYTop = parHeight / 2 - cylRadius;
+    const posYBottom = -parHeight / 2 + cylRadius;
+    const posZFront = parDepth / 2 - cylRadius;
+    const posZBack = -parDepth / 2 + cylRadius;
 
-    // Segundo cilindro - mesma orientação, deslocado para cima no eixo Y
-    const cilindro2 = new THREE.Mesh(cylGeometry, cylMaterial);
-    cilindro2.rotation.z = Math.PI / 2;
-    cilindro2.position.x = parWidth / 2 + cylHeight / 2;
-    cilindro2.position.y = -parHeight / 2 + cylRadius + 0.3;
-    cilindro2.position.z = 0;
-    grupo.add(cilindro2);
-
-    // Linhas de arestas do segundo cilindro
-    const cylEdges2 = new THREE.EdgesGeometry(cylGeometry);
-    const cylLines2 = new THREE.LineSegments(
-      cylEdges2,
-      new THREE.LineBasicMaterial({ color: 0xffffff })
-    );
-    cilindro2.add(cylLines2);
+    criarCilindro(posX, posYTop, posZFront);     // canto superior frontal
+    criarCilindro(posX, posYTop, posZBack);      // canto superior traseiro
+    criarCilindro(posX, posYBottom, posZFront);  // canto inferior frontal
+    criarCilindro(posX, posYBottom, posZBack);   // canto inferior traseiro
 
     // Adiciona o grupo à cena
     scene.add(grupo);
