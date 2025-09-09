@@ -7,10 +7,24 @@
   <style>
     html, body { height: 100%; margin: 0; overflow: hidden; background: #111; }
     canvas { display: block; }
+
+    /* Estilo da imagem de status */
+    #statusImg {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      max-width: 200px;
+      display: none; /* começa escondida */
+      z-index: 10;
+    }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/three@0.155.0/build/three.min.js"></script>
 </head>
 <body>
+  <!-- Imagem que será trocada -->
+  <img id="statusImg" src="" alt="Status" />
+
   <script>
     // Cena
     const scene = new THREE.Scene();
@@ -75,17 +89,17 @@
       cilindros.push(cilindro);
     }
 
-    // Coordenadas dos 4 cantos da face lateral direita do paralelepípedo
+    // Coordenadas
     const xCilindro = parWidth / 2 + cylHeight / 2;
     const yTop = parHeight / 2 - cylRadius;
     const yBottom = -parHeight / 2 + cylRadius;
     const zFront = parDepth / 2 - cylRadius;
     const zBack = -parDepth / 2 + cylRadius;
 
-    criarCilindro(xCilindro, yTop, zFront);    // canto superior frente
-    criarCilindro(xCilindro, yTop, zBack);     // canto superior trás
-    criarCilindro(xCilindro, yBottom, zFront); // canto inferior frente
-    criarCilindro(xCilindro, yBottom, zBack);  // canto inferior trás
+    criarCilindro(xCilindro, yTop, zFront);
+    criarCilindro(xCilindro, yTop, zBack);
+    criarCilindro(xCilindro, yBottom, zFront);
+    criarCilindro(xCilindro, yBottom, zBack);
 
     scene.add(grupo);
 
@@ -114,7 +128,7 @@
       previousMousePosition = { x: e.clientX, y: e.clientY };
     });
 
-    // Zoom com scroll
+    // Zoom
     window.addEventListener('wheel', (e) => {
       const zoomSpeed = 0.1;
       camera.position.z += e.deltaY * zoomSpeed;
@@ -128,9 +142,11 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
+    // Elemento de imagem
+    const statusImg = document.getElementById("statusImg");
+
     // WebSocket
     let socket;
-
     try {
       socket = new WebSocket('ws://localhost:1880/ws');
 
@@ -140,17 +156,24 @@
 
       socket.onerror = (error) => {
         console.error("❌ Erro na conexão WebSocket:", error);
-        alert("Não foi possível conectar ao servidor WebSocket em ws://localhost:6790");
       };
 
       socket.onmessage = (event) => {
-        const comando = event.data;
+        const comando = event.data.trim();
         console.log("📩 Comando recebido:", comando);
 
         if (comando === "hide_cylinders") {
           cilindros.forEach(c => c.visible = false);
+          statusImg.style.display = "none";
         } else if (comando === "show_cylinders") {
           cilindros.forEach(c => c.visible = true);
+          statusImg.style.display = "none";
+        } else if (comando === "pass") {
+          statusImg.src = "PASS.png";
+          statusImg.style.display = "block";
+        } else if (comando === "fail") {
+          statusImg.src = "FAIL.png";
+          statusImg.style.display = "block";
         } else {
           console.warn("⚠️ Comando desconhecido:", comando);
         }
@@ -168,7 +191,6 @@
       requestAnimationFrame(animate);
       renderer.render(scene, camera);
     }
-
     animate();
   </script>
 </body>
