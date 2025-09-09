@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Three.js - Cubo Giratório com Zoom</title>
+  <title>Three.js - Paralelepípedo Giratório com Zoom</title>
   <style>
     html, body { height: 100%; margin: 0; overflow: hidden; }
     canvas { display: block; }
@@ -37,11 +37,11 @@
     const ambient = new THREE.AmbientLight(0xffffff, 0.3);
     scene.add(ambient);
 
-    // Cubo
-    const geometry = new THREE.BoxGeometry(1, 1, 1);
-    const material = new THREE.MeshStandardMaterial({ color: 0x0077ff });
-    const cube = new THREE.Mesh(geometry, material);
-    scene.add(cube);
+    // Paralelepípedo (caixa retangular)
+    const geometry = new THREE.BoxGeometry(2, 1, 0.5);  // largura, altura, profundidade
+    const material = new THREE.MeshStandardMaterial({ color: 0x808080 }); // cinza
+    const paralelepipedo = new THREE.Mesh(geometry, material);
+    scene.add(paralelepipedo);
 
     // Variáveis para controle do arrasto e rotação
     let isDragging = false;
@@ -67,8 +67,8 @@
 
       const rotationSpeed = 0.005;
 
-      cube.rotation.y += deltaMove.x * rotationSpeed;
-      cube.rotation.x += deltaMove.y * rotationSpeed;
+      paralelepipedo.rotation.y += deltaMove.x * rotationSpeed;
+      paralelepipedo.rotation.x += deltaMove.y * rotationSpeed;
 
       previousMousePosition.x = event.clientX;
       previousMousePosition.y = event.clientY;
@@ -76,11 +76,9 @@
 
     // Zoom com a roda do mouse
     window.addEventListener('wheel', (event) => {
-      // Ajusta a posição Z da câmera com limite para não passar muito perto ou longe
       const zoomSpeed = 0.1;
       camera.position.z += event.deltaY * zoomSpeed;
 
-      // Limitar zoom entre 2 e 20
       camera.position.z = Math.min(Math.max(camera.position.z, 2), 20);
     });
 
