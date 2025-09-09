@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Three.js - Paralelepípedo com Cilindros Agrupados</title>
+  <title>Three.js - Paralelepípedo com Cilindros Agrupados com Arestas</title>
   <style>
     html, body { height: 100%; margin: 0; overflow: hidden; }
     canvas { display: block; }
@@ -49,9 +49,17 @@
     const paralelepipedo = new THREE.Mesh(parGeometry, parMaterial);
     grupo.add(paralelepipedo);
 
+    // Linhas de arestas do paralelepípedo (brancas)
+    const parEdges = new THREE.EdgesGeometry(parGeometry);
+    const parLines = new THREE.LineSegments(
+      parEdges,
+      new THREE.LineBasicMaterial({ color: 0xffffff })
+    );
+    grupo.add(parLines);
+
     // Parâmetros dos cilindros
     const cylRadius = 0.02;
-    const cylHeight = 0.2;
+    const cylHeight = 0.1;
     const cylGeometry = new THREE.CylinderGeometry(cylRadius, cylRadius, cylHeight, 32);
     const cylMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
 
@@ -63,13 +71,29 @@
     cilindro1.position.z = 0;
     grupo.add(cilindro1);
 
+    // Linhas de arestas do primeiro cilindro
+    const cylEdges1 = new THREE.EdgesGeometry(cylGeometry);
+    const cylLines1 = new THREE.LineSegments(
+      cylEdges1,
+      new THREE.LineBasicMaterial({ color: 0xffffff })
+    );
+    cilindro1.add(cylLines1);
+
     // Segundo cilindro - mesma orientação, deslocado para cima no eixo Y
     const cilindro2 = new THREE.Mesh(cylGeometry, cylMaterial);
     cilindro2.rotation.z = Math.PI / 2;
     cilindro2.position.x = parWidth / 2 + cylHeight / 2;
-    cilindro2.position.y = -parHeight / 2 + cylRadius + 0.3; // ajusta distância no eixo Y
+    cilindro2.position.y = -parHeight / 2 + cylRadius + 0.3;
     cilindro2.position.z = 0;
     grupo.add(cilindro2);
+
+    // Linhas de arestas do segundo cilindro
+    const cylEdges2 = new THREE.EdgesGeometry(cylGeometry);
+    const cylLines2 = new THREE.LineSegments(
+      cylEdges2,
+      new THREE.LineBasicMaterial({ color: 0xffffff })
+    );
+    cilindro2.add(cylLines2);
 
     // Adiciona o grupo à cena
     scene.add(grupo);
