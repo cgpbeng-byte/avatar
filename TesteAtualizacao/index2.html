@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Teste de WebSocket</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background: #111; color: #eee; }
+    #status { margin-bottom: 10px; }
+    #log { white-space: pre-wrap; background: #222; padding: 10px; border-radius: 5px; max-height: 200px; overflow-y: auto; }
+    button { margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Debug WebSocket</h1>
+  <div id="status">🔄 Conectando...</div>
+  <div id="log"></div>
+  <button onclick="enviarMensagem()">Enviar 'ping'</button>
+
+  <script>
+    const statusEl = document.getElementById('status');
+    const logEl = document.getElementById('log');
+
+    let socket;
+
+    try {
+      socket = new WebSocket('ws://localhost:1880/ws');
+
+      socket.onopen = () => {
+        statusEl.textContent = "✅ Conectado ao WebSocket em ws://localhost:6790";
+        log("Conexão estabelecida.");
+        socket.send("ping_from_debug");
+      };
+
+      socket.onmessage = (event) => {
+        log("📨 Mensagem recebida: " + event.data);
+      };
+
+      socket.onerror = (error) => {
+        statusEl.textContent = "❌ Erro de conexão com WebSocket.";
+        log("Erro: " + error);
+      };
+
+      socket.onclose = () => {
+        statusEl.textContent = "🔌 Conexão WebSocket fechada.";
+        log("Conexão encerrada.");
+      };
+    } catch (err) {
+      statusEl.textContent = "❌ Falha ao criar WebSocket.";
+      log("Exceção: " + err);
+    }
+
+    function enviarMensagem() {
+      if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.send("ping_from_button");
+        log("📤 Mensagem enviada: ping_from_button");
+      } else {
+        log("❗ WebSocket não está conectado.");
+      }
+    }
+
+    function log(msg) {
+      const now = new Date().toLocaleTimeString();
+      logEl.textContent += `[${now}] ${msg}\n`;
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+  </script>
+</body>
+</html>

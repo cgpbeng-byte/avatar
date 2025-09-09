@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Three.js - Paralelepípedo com Cilindros e Controle WebSocket</title>
+  <style>
+    html, body { height: 100%; margin: 0; overflow: hidden; background: #111; }
+    canvas { display: block; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.155.0/build/three.min.js"></script>
+</head>
+<body>
+  <script>
+    // Cena
+    const scene = new THREE.Scene();
+
+    // Câmera
+    const camera = new THREE.PerspectiveCamera(
+      75,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      1000
+    );
+    camera.position.z = 5;
+
+    // Renderizador
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    document.body.appendChild(renderer.domElement);
+
+    // Luzes
+    const pointLight = new THREE.PointLight(0xffffff, 1, 100);
+    pointLight.position.set(5, 5, 5);
+    scene.add(pointLight);
+    const ambient = new THREE.AmbientLight(0xffffff, 0.3);
+    scene.add(ambient);
+
+    // Grupo para unir os objetos
+    const grupo = new THREE.Group();
+
+    // Paralelepípedo
+    const parWidth = 2;
+    const parHeight = 1;
+    const parDepth = 0.5;
+    const parGeometry = new THREE.BoxGeometry(parWidth, parHeight, parDepth);
+    const parMaterial = new THREE.MeshStandardMaterial({ color: 0x808080 });
+    const paralelepipedo = new THREE.Mesh(parGeometry, parMaterial);
+    grupo.add(paralelepipedo);
+
+    // Linhas de arestas do paralelepípedo (brancas)
+    const parEdges = new THREE.EdgesGeometry(parGeometry);
+    const parLines = new THREE.LineSegments(
+      parEdges,
+      new THREE.LineBasicMaterial({ color: 0xffffff })
+    );
+    grupo.add(parLines);
+
+    // Parâmetros dos cilindros
+    const cylRadius = 0.02;
+    const cylHeight = 0.1;
+    const cylGeometry = new THREE.CylinderGeometry(cylRadius, cylRadius, cylHeight, 32);
+    const cylMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+
+    // Array para guardar os cilindros
+    const cilindros = [];
+
+    // Função para criar cilindro na posição
+    function criarCilindro(x, y, z) {
+      const cilindro = new THREE.Mesh(cylGeometry, cylMaterial);
+      cilindro.rotation.z = Math.PI / 2;
+      cilindro.position.set(x, y, z);
+      grupo.add(cilindro);
+      cilindros.push(cilindro);
+    }
+
+    // Criar 4 cilindros nas pontas da face lateral direita do paralelepípedo
+    // Pontas (x fixo na lateral direita + meia altura, y e z nas 4 pontas do retângulo lateral)
+    const xCilindro = parWidth / 2 + cylHeight / 2;
+    const yTop = parHeight / 2 - cylRadius;
+    const yBottom = -parHeight / 2 + cylRadius;
+    const zFront = parDepth / 2 - cylRadius;
+    const zBack = -parDepth / 2 + cylRadius;
+
+    criarCilindro(xCilindro, yTop, zFront);    // canto superior frente
+    criarCilindro(xCilindro, yTop, zBack);     // canto superior trás
+    criarCilindro(xCilindro, yBottom, zFront); // canto inferior frente
+    criarCilindro(xCilindro, yBottom, zBack);  // canto inferior trás
+
+    // Adiciona o grupo à cena
+    scene.add(grupo);
+
+    // Controle de rotação com o mouse
+    let isDragging = false;
+    let previousMousePosition = { x: 0, y: 0 };
+
+    document.addEventListener('mousedown', (event) => {
+      isDragging = true;
+      previousMousePosition.x = event.clientX;
+      previousMousePosition.y = event.clientY;
+    });
+
+    document.addEventListener('mouseup', () => {
+      isDragging = false;
+    });
+
+    document.addEventListener('mousemove', (event) => {
+      if (!isDragging) return;
+
+      const deltaMove = {
+        x: event.clientX - previousMousePosition.x,
+        y: event.clientY - previousMousePosition.y
+      };
+
+      const rotationSpeed = 0.005;
+
+      grupo.rotation.y += deltaMove.x * rotationSpeed;
+      grupo.rotation.x += deltaMove.y * rotationSpeed;
+
+      previousMousePosition.x = event.clientX;
+      previousMousePosition.y = event.clientY;
+    });
+
+    // Zoom com a roda do mouse
+    window.addEventListener('wheel', (event) => {
+      const zoomSpeed = 0.1;
+      camera.position.z += event.deltaY * zoomSpeed;
+      camera.position.z = Math.min(Math.max(camera.position.z, 2), 20);
+    });
+
+    // Ajuste responsivo
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // WebSocket para comunicação com o backend Python
+    const socket = new WebSocket('ws://localhost:6789');
+
+    socket.onopen = () => {
+      console.log("WebSocket conectado ao servidor");
+    };
+
+    socket.onmessage = (event) => {
+      console.log("Comando recebido:", event.data);
+      if (event.data === "hide_cylinders") {
+        cilindros.forEach(c => c.visible = false);
+      } else if (event.data === "show_cylinders") {
+        cilindros.forEach(c => c.visible = true);
+      }
+    };
+
+    socket.onclose = () => {
+      console.log("Conexão WebSocket fechada");
+    };
+
+    // Renderização contínua
+    function animate() {
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    }
+
+    animate();
+  </script>
+</body>
+</html>

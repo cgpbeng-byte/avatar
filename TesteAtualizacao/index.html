@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Three.js - Paralelepípedo com Cilindros e Controle WebSocket</title>
+  <style>
+    html, body { height: 100%; margin: 0; overflow: hidden; background: #111; }
+    canvas { display: block; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.155.0/build/three.min.js"></script>
+</head>
+<body>
+  <script>
+    // Cena
+    const scene = new THREE.Scene();
+
+    // Câmera
+    const camera = new THREE.PerspectiveCamera(
+      75,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      1000
+    );
+    camera.position.z = 5;
+
+    // Renderizador
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    document.body.appendChild(renderer.domElement);
+
+    // Luzes
+    const pointLight = new THREE.PointLight(0xffffff, 1, 100);
+    pointLight.position.set(5, 5, 5);
+    scene.add(pointLight);
+    const ambient = new THREE.AmbientLight(0xffffff, 0.3);
+    scene.add(ambient);
+
+    // Grupo principal
+    const grupo = new THREE.Group();
+
+    // Paralelepípedo
+    const parWidth = 2;
+    const parHeight = 1;
+    const parDepth = 0.5;
+    const parGeometry = new THREE.BoxGeometry(parWidth, parHeight, parDepth);
+    const parMaterial = new THREE.MeshStandardMaterial({ color: 0x808080 });
+    const paralelepipedo = new THREE.Mesh(parGeometry, parMaterial);
+    grupo.add(paralelepipedo);
+
+    // Linhas de arestas do paralelepípedo
+    const parEdges = new THREE.EdgesGeometry(parGeometry);
+    const parLines = new THREE.LineSegments(
+      parEdges,
+      new THREE.LineBasicMaterial({ color: 0xffffff })
+    );
+    grupo.add(parLines);
+
+    // Parâmetros dos cilindros
+    const cylRadius = 0.02;
+    const cylHeight = 0.1;
+    const cylGeometry = new THREE.CylinderGeometry(cylRadius, cylRadius, cylHeight, 32);
+    const cylMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+
+    // Array para guardar os cilindros
+    const cilindros = [];
+
+    // Função para criar cilindros nas pontas da face direita
+    function criarCilindro(x, y, z) {
+      const cilindro = new THREE.Mesh(cylGeometry, cylMaterial);
+      cilindro.rotation.z = Math.PI / 2;
+      cilindro.position.set(x, y, z);
+      grupo.add(cilindro);
+      cilindros.push(cilindro);
+    }
+
+    // Coordenadas dos 4 cantos da face lateral direita do paralelepípedo
+    const xCilindro = parWidth / 2 + cylHeight / 2;
+    const yTop = parHeight / 2 - cylRadius;
+    const yBottom = -parHeight / 2 + cylRadius;
+    const zFront = parDepth / 2 - cylRadius;
+    const zBack = -parDepth / 2 + cylRadius;
+
+    criarCilindro(xCilindro, yTop, zFront);    // canto superior frente
+    criarCilindro(xCilindro, yTop, zBack);     // canto superior trás
+    criarCilindro(xCilindro, yBottom, zFront); // canto inferior frente
+    criarCilindro(xCilindro, yBottom, zBack);  // canto inferior trás
+
+    scene.add(grupo);
+
+    // Controle de rotação com mouse
+    let isDragging = false;
+    let previousMousePosition = { x: 0, y: 0 };
+
+    document.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      previousMousePosition = { x: e.clientX, y: e.clientY };
+    });
+
+    document.addEventListener('mouseup', () => {
+      isDragging = false;
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      const delta = {
+        x: e.clientX - previousMousePosition.x,
+        y: e.clientY - previousMousePosition.y,
+      };
+      const speed = 0.005;
+      grupo.rotation.y += delta.x * speed;
+      grupo.rotation.x += delta.y * speed;
+      previousMousePosition = { x: e.clientX, y: e.clientY };
+    });
+
+    // Zoom com scroll
+    window.addEventListener('wheel', (e) => {
+      const zoomSpeed = 0.1;
+      camera.position.z += e.deltaY * zoomSpeed;
+      camera.position.z = Math.max(2, Math.min(20, camera.position.z));
+    });
+
+    // Resize responsivo
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // WebSocket
+    let socket;
+
+    try {
+      socket = new WebSocket('ws://localhost:1880/ws');
+
+      socket.onopen = () => {
+        console.log("✅ WebSocket conectado ao servidor.");
+      };
+
+      socket.onerror = (error) => {
+        console.error("❌ Erro na conexão WebSocket:", error);
+        alert("Não foi possível conectar ao servidor WebSocket em ws://localhost:6790");
+      };
+
+      socket.onmessage = (event) => {
+        const comando = event.data;
+        console.log("📩 Comando recebido:", comando);
+
+        if (comando === "hide_cylinders") {
+          cilindros.forEach(c => c.visible = false);
+        } else if (comando === "show_cylinders") {
+          cilindros.forEach(c => c.visible = true);
+        } else {
+          console.warn("⚠️ Comando desconhecido:", comando);
+        }
+      };
+
+      socket.onclose = () => {
+        console.warn("🔌 Conexão WebSocket encerrada.");
+      };
+    } catch (e) {
+      console.error("❌ Erro ao tentar criar WebSocket:", e);
+    }
+
+    // Loop de renderização
+    function animate() {
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    }
+
+    animate();
+  </script>
+</body>
+</html>
