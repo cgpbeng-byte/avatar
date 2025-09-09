@@ -3,12 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Three.js - Cubo Girando</title>
+  <title>Three.js - Cubo Giratório com Clique e Arraste</title>
   <style>
-    html, body { height: 100%; margin: 0; }
+    html, body { height: 100%; margin: 0; overflow: hidden; }
     canvas { display: block; }
   </style>
-  <!-- Biblioteca Three.js -->
   <script src="https://cdn.jsdelivr.net/npm/three@0.155.0/build/three.min.js"></script>
 </head>
 <body>
@@ -23,7 +22,7 @@
       0.1,
       1000
     );
-    camera.position.z = 3;
+    camera.position.z = 5;
 
     // Renderizador
     const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -44,19 +43,48 @@
     const cube = new THREE.Mesh(geometry, material);
     scene.add(cube);
 
+    // Variáveis para controle do arrasto e rotação
+    let isDragging = false;
+    let previousMousePosition = { x: 0, y: 0 };
+
+    document.addEventListener('mousedown', (event) => {
+      isDragging = true;
+      previousMousePosition.x = event.clientX;
+      previousMousePosition.y = event.clientY;
+    });
+
+    document.addEventListener('mouseup', () => {
+      isDragging = false;
+    });
+
+    document.addEventListener('mousemove', (event) => {
+      if (!isDragging) return;
+
+      const deltaMove = {
+        x: event.clientX - previousMousePosition.x,
+        y: event.clientY - previousMousePosition.y
+      };
+
+      // Rotaciona o cubo baseado na diferença do movimento do mouse
+      const rotationSpeed = 0.005;
+
+      cube.rotation.y += deltaMove.x * rotationSpeed; // gira no eixo Y com movimento horizontal
+      cube.rotation.x += deltaMove.y * rotationSpeed; // gira no eixo X com movimento vertical
+
+      previousMousePosition.x = event.clientX;
+      previousMousePosition.y = event.clientY;
+    });
+
     // Ajuste responsivo
-    function onWindowResize() {
+    window.addEventListener('resize', () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
-    }
-    window.addEventListener('resize', onWindowResize);
+    });
 
-    // Animação
+    // Renderização contínua
     function animate() {
       requestAnimationFrame(animate);
-      cube.rotation.x += 0.01;
-      cube.rotation.y += 0.01;
       renderer.render(scene, camera);
     }
 
