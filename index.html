@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Three.js - Paralelepípedo com 4 Cilindros nas Pontas</title>
+  <title>Three.js - Paralelepípedo com 4 Cilindros nas Pontas + Controle Teclado</title>
   <style>
     html, body { height: 100%; margin: 0; overflow: hidden; }
     canvas { display: block; }
@@ -63,17 +63,19 @@
     const cylGeometry = new THREE.CylinderGeometry(cylRadius, cylRadius, cylHeight, 32);
     const cylMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
 
+    // Lista para guardar cilindros
+    const cilindros = [];
+
     // Função para criar cilindro na posição desejada
     function criarCilindro(x, y, z) {
       const cilindro = new THREE.Mesh(cylGeometry, cylMaterial);
       cilindro.rotation.z = Math.PI / 2; // Deitado
       cilindro.position.set(x, y, z);
       grupo.add(cilindro);
+      cilindros.push(cilindro); // Guardar referência para controle
     }
 
     // Posiciona os 4 cilindros nas pontas da face lateral direita do paralelepípedo
-    // Face lateral direita está em x = parWidth/2 + cylHeight/2 (distância lateral)
-    // Pontas correspondem aos 4 cantos na face lateral: combinações de y e z
     const posX = parWidth / 2 + cylHeight / 2;
     const posYTop = parHeight / 2 - cylRadius;
     const posYBottom = -parHeight / 2 + cylRadius;
@@ -87,6 +89,16 @@
 
     // Adiciona o grupo à cena
     scene.add(grupo);
+
+    // Controle para esconder/mostrar cilindros com as teclas A e B
+    window.addEventListener('keydown', (event) => {
+      if(event.key === 'a' || event.key === 'A'){
+        cilindros.forEach(c => c.visible = false);
+      }
+      if(event.key === 'b' || event.key === 'B'){
+        cilindros.forEach(c => c.visible = true);
+      }
+    });
 
     // Controle de rotação com o mouse
     let isDragging = false;
