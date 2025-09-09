@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Three.js - Paralelepípedo Giratório com Zoom</title>
+  <title>Three.js - Paralelepípedo com Cilindro Agrupado</title>
   <style>
     html, body { height: 100%; margin: 0; overflow: hidden; }
     canvas { display: block; }
@@ -37,13 +37,39 @@
     const ambient = new THREE.AmbientLight(0xffffff, 0.3);
     scene.add(ambient);
 
-    // Paralelepípedo (caixa retangular)
-    const geometry = new THREE.BoxGeometry(2, 1, 0.5);  // largura, altura, profundidade
-    const material = new THREE.MeshStandardMaterial({ color: 0x808080 }); // cinza
-    const paralelepipedo = new THREE.Mesh(geometry, material);
-    scene.add(paralelepipedo);
+    // Grupo para unir os objetos
+    const grupo = new THREE.Group();
 
-    // Variáveis para controle do arrasto e rotação
+    // Paralelepípedo
+    const parWidth = 2;
+    const parHeight = 1;
+    const parDepth = 0.5;
+    const parGeometry = new THREE.BoxGeometry(parWidth, parHeight, parDepth);
+    const parMaterial = new THREE.MeshStandardMaterial({ color: 0x808080 });
+    const paralelepipedo = new THREE.Mesh(parGeometry, parMaterial);
+    grupo.add(paralelepipedo);
+
+    // Cilindro
+    const cylRadius = 0.15;
+    const cylHeight = 1;
+    const cylGeometry = new THREE.CylinderGeometry(cylRadius, cylRadius, cylHeight, 32);
+    const cylMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+    const cilindro = new THREE.Mesh(cylGeometry, cylMaterial);
+
+    // Rotacionar cilindro para deitar
+    cilindro.rotation.z = Math.PI / 2;
+
+    // Posicionar o cilindro encostado na lateral direita do paralelepípedo
+    cilindro.position.x = parWidth / 2 + cylHeight / 2;
+    cilindro.position.y = -parHeight / 2 + cylRadius;
+    cilindro.position.z = 0;
+
+    grupo.add(cilindro);
+
+    // Adiciona o grupo à cena
+    scene.add(grupo);
+
+    // Controle de rotação com o mouse
     let isDragging = false;
     let previousMousePosition = { x: 0, y: 0 };
 
@@ -67,8 +93,8 @@
 
       const rotationSpeed = 0.005;
 
-      paralelepipedo.rotation.y += deltaMove.x * rotationSpeed;
-      paralelepipedo.rotation.x += deltaMove.y * rotationSpeed;
+      grupo.rotation.y += deltaMove.x * rotationSpeed;
+      grupo.rotation.x += deltaMove.y * rotationSpeed;
 
       previousMousePosition.x = event.clientX;
       previousMousePosition.y = event.clientY;
@@ -78,7 +104,6 @@
     window.addEventListener('wheel', (event) => {
       const zoomSpeed = 0.1;
       camera.position.z += event.deltaY * zoomSpeed;
-
       camera.position.z = Math.min(Math.max(camera.position.z, 2), 20);
     });
 
