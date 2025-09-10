@@ -63,7 +63,7 @@
     const paralelepipedo = new THREE.Mesh(parGeometry, parMaterial);
     grupo.add(paralelepipedo);
 
-    // Linhas de arestas do paralelepípedo
+    // Linhas de arestas
     const parEdges = new THREE.EdgesGeometry(parGeometry);
     const parLines = new THREE.LineSegments(
       parEdges,
@@ -77,16 +77,16 @@
     const cylGeometry = new THREE.CylinderGeometry(cylRadius, cylRadius, cylHeight, 32);
     const cylMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
 
-    // Array para guardar os cilindros
-    const cilindros = [];
+    // Objeto para guardar os cilindros individualmente
+    const cilindros = {};
 
-    // Função para criar cilindros nas pontas da face direita
-    function criarCilindro(x, y, z) {
+    // Função para criar cilindros e guardar com chave (c1, c2, c3, c4)
+    function criarCilindro(nome, x, y, z) {
       const cilindro = new THREE.Mesh(cylGeometry, cylMaterial);
       cilindro.rotation.z = Math.PI / 2;
       cilindro.position.set(x, y, z);
       grupo.add(cilindro);
-      cilindros.push(cilindro);
+      cilindros[nome] = cilindro;
     }
 
     // Coordenadas
@@ -96,10 +96,11 @@
     const zFront = parDepth / 2 - cylRadius;
     const zBack = -parDepth / 2 + cylRadius;
 
-    criarCilindro(xCilindro, yTop, zFront);
-    criarCilindro(xCilindro, yTop, zBack);
-    criarCilindro(xCilindro, yBottom, zFront);
-    criarCilindro(xCilindro, yBottom, zBack);
+    // Criar cilindros nomeados
+    criarCilindro("c1", xCilindro, yTop, zFront);    // canto superior frente
+    criarCilindro("c2", xCilindro, yTop, zBack);     // canto superior trás
+    criarCilindro("c3", xCilindro, yBottom, zFront); // canto inferior frente
+    criarCilindro("c4", xCilindro, yBottom, zBack);  // canto inferior trás
 
     scene.add(grupo);
 
@@ -162,12 +163,23 @@
         const comando = event.data.trim();
         console.log("📩 Comando recebido:", comando);
 
-        if (comando === "hide_cylinders") {
-          cilindros.forEach(c => c.visible = false);
-          statusImg.style.display = "none";
-        } else if (comando === "show_cylinders") {
-          cilindros.forEach(c => c.visible = true);
-          statusImg.style.display = "none";
+      if (comando === "c1visivel") {
+        cilindros.c1.visible = true;
+        } else if (comando === "c1invisivel") {
+          cilindros.c1.visible = false;
+        } else if (comando === "c2visivel") {
+          cilindros.c2.visible = true;
+        } else if (comando === "c2invisivel") {
+          cilindros.c2.visible = false;
+        } else if (comando === "c3visivel") {
+          cilindros.c3.visible = true;
+        } else if (comando === "c3invisivel") {
+          cilindros.c3.visible = false;
+        } else if (comando === "c4visivel") {
+          cilindros.c4.visible = true;
+        } else if (comando === "c4invisivel") {
+          cilindros.c4.visible = false;
+
         } else if (comando === "pass") {
           statusImg.src = "PASS.png";
           statusImg.style.display = "block";
