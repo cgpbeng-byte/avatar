@@ -5,7 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Three.js - Paralelepípedo com Cilindros e Controle WebSocket</title>
   <style>
-    html, body { height: 100%; margin: 0; overflow: hidden; background: #111; }
+    html, body { 
+      height: 100%; 
+      margin: 0; 
+      overflow: hidden; 
+      background: #111; 
+    }
     canvas { display: block; }
 
     /* Estilo da imagem de status */
@@ -18,12 +23,25 @@
       display: none; /* começa escondida */
       z-index: 10;
     }
+
+    /* Estilo da logo no canto inferior esquerdo */
+    #logo {
+      position: absolute;
+      bottom: 5px;
+      left: 5px;
+      width: 250px; /* aumentei o tamanho */
+      height: auto;
+      z-index: 10;
+    }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/three@0.155.0/build/three.min.js"></script>
 </head>
 <body>
   <!-- Imagem que será trocada -->
   <img id="statusImg" src="" alt="Status" />
+
+  <!-- Logo no canto inferior esquerdo -->
+  <img id="logo" src="logo.png" alt="Logo" />
 
   <script>
     // Cena
