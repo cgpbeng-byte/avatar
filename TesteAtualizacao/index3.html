@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Three.js - Modelo GLB + Zoom + Logo</title>
+  <title>Three.js - Modelo GLB + Controles + Logo + WebSocket</title>
   <style>
     html, body { 
       margin: 0; 
@@ -16,7 +16,7 @@
       position: absolute;
       top: 0;
       left: 0;
-      z-index: 1; /* canvas fica atrás */
+      z-index: 1;
     }
     #logo {
       position: absolute;
@@ -24,11 +24,19 @@
       left: 10px;
       width: 200px;
       height: auto;
-      z-index: 100; /* logo sempre por cima */
+      z-index: 100;
+    }
+    #statusImg {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      max-width: 200px;
+      display: none;
+      z-index: 100;
     }
   </style>
 
-  <!-- Importmap para usar módulos modernos -->
   <script type="importmap">
   {
     "imports": {
@@ -39,38 +47,39 @@
   </script>
 </head>
 <body>
-  <!-- Logo fixa -->
   <img id="logo" src="logo.png" alt="Logo" />
+  <img id="statusImg" src="" alt="Status" />
 
   <script type="module">
     import * as THREE from 'three';
     import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
-    // Cena
+    // --- Cena ---
     const scene = new THREE.Scene();
 
-    // Câmera
+    // --- Câmera ---
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
     camera.position.set(0, 1.5, 5);
 
-    // Renderizador
+    // --- Renderizador ---
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     document.body.appendChild(renderer.domElement);
 
-    // Luzes
-    const light = new THREE.DirectionalLight(0xffffff, 1);
+    // --- Luzes ---
+    const light = new THREE.DirectionalLight(0xffffff, 10);
     light.position.set(5, 5, 5);
     scene.add(light);
-    scene.add(new THREE.AmbientLight(0x222222));
+    scene.add(new THREE.AmbientLight(0x333333));
 
-    // Loader GLB
+    // --- Loader GLB ---
     const loader = new GLTFLoader();
+    let model;
     loader.load(
       'condensadora.glb', // ajuste o caminho do modelo
       (gltf) => {
-        const model = gltf.scene;
+        model = gltf.scene;
         model.scale.set(1, 1, 1);
         model.position.set(0, 0, 0);
         scene.add(model);
@@ -80,21 +89,73 @@
       (error) => console.error("❌ Erro ao carregar modelo:", error)
     );
 
-    // Função de zoom (roda do mouse)
-    window.addEventListener('wheel', (e) => {
-      const zoomSpeed = 0.002;
-      camera.position.z += e.deltaY * zoomSpeed;
-      camera.position.z = Math.max(2, Math.min(20, camera.position.z)); // limites
+    // --- Controles manuais ---
+    let isDragging = false;
+    let previousMousePosition = { x: 0, y: 0 };
+
+    document.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      previousMousePosition = { x: e.clientX, y: e.clientY };
+    });
+    document.addEventListener('mouseup', () => isDragging = false);
+    document.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      const delta = {
+        x: e.clientX - previousMousePosition.x,
+        y: e.clientY - previousMousePosition.y,
+      };
+      const speed = 0.005;
+      if(model) model.rotation.y += delta.x * speed;
+      if(model) model.rotation.x += delta.y * speed;
+      previousMousePosition = { x: e.clientX, y: e.clientY };
     });
 
-    // Resize
+    // --- Zoom ---
+    window.addEventListener('wheel', (e) => {
+      const zoomSpeed = 1;
+      camera.position.z += e.deltaY * zoomSpeed;
+      camera.position.z = Math.max(2, Math.min(100, camera.position.z));
+    });
+
+    // --- Resize ---
     window.addEventListener('resize', () => {
       camera.aspect = window.innerWidth/window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
-    // Loop
+    // --- WebSocket ---
+    const statusImg = document.getElementById("statusImg");
+    let socket;
+    try {
+      socket = new WebSocket('ws://localhost:1880/ws');
+
+      socket.onopen = () => console.log("✅ WebSocket conectado");
+      socket.onerror = (error) => console.error("❌ WebSocket erro:", error);
+
+      socket.onmessage = (event) => {
+        const comando = event.data.trim();
+        console.log("📩 Comando recebido:", comando);
+
+        if(comando === "pass") {
+          statusImg.src = "PASS.png";
+          statusImg.style.display = "block";
+        } else if(comando === "fail") {
+          statusImg.src = "FAIL.png";
+          statusImg.style.display = "block";
+        } else if(comando === "hideStatus") {
+          statusImg.style.display = "none";
+        } else {
+          console.warn("⚠️ Comando desconhecido:", comando);
+        }
+      };
+
+      socket.onclose = () => console.warn("🔌 Conexão WebSocket encerrada");
+    } catch(e) {
+      console.error("❌ Falha ao criar WebSocket:", e);
+    }
+
+    // --- Loop ---
     function animate(){
       requestAnimationFrame(animate);
       renderer.render(scene, camera);
