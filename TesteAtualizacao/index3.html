@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Three.js - Modelo GLB + Controles + Logo + WebSocket</title>
+  <title>Three.js - Modelo GLB + Cilindros + Logo + WebSocket</title>
   <style>
     html, body { 
       margin: 0; 
@@ -73,6 +73,10 @@
     scene.add(light);
     scene.add(new THREE.AmbientLight(0x333333));
 
+    // --- Grupo principal (modelo + cilindros) ---
+    const grupo = new THREE.Group();
+    scene.add(grupo);
+
     // --- Loader GLB ---
     const loader = new GLTFLoader();
     let model;
@@ -82,12 +86,40 @@
         model = gltf.scene;
         model.scale.set(1, 1, 1);
         model.position.set(0, 0, 0);
-        scene.add(model);
+        grupo.add(model);
         console.log("✅ Modelo carregado");
       },
       (xhr) => console.log((xhr.loaded / xhr.total * 100).toFixed(2) + '% carregado'),
       (error) => console.error("❌ Erro ao carregar modelo:", error)
     );
+
+    // --- Cilindros ---
+    const cylRadius = 0.02;
+    const cylHeight = 0.1;
+    const cylGeometry = new THREE.CylinderGeometry(cylRadius, cylRadius, cylHeight, 32);
+    const cylMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+
+    const cilindros = {};
+
+    function criarCilindro(nome, x, y, z) {
+      const cilindro = new THREE.Mesh(cylGeometry, cylMaterial);
+      cilindro.rotation.z = Math.PI / 2;
+      cilindro.position.set(x, y, z);
+      grupo.add(cilindro);
+      cilindros[nome] = cilindro;
+    }
+
+    // Coordenadas base (ajustáveis dependendo do tamanho do modelo)
+    const xOffset = 1;   // distância do eixo X
+    const yTop = 0.5;
+    const yBottom = -0.5;
+    const zFront = 0.25;
+    const zBack = -0.25;
+
+    criarCilindro("c1", xOffset, yTop, zFront);
+    criarCilindro("c2", xOffset, yTop, zBack);
+    criarCilindro("c3", xOffset, yBottom, zFront);
+    criarCilindro("c4", xOffset, yBottom, zBack);
 
     // --- Controles manuais ---
     let isDragging = false;
@@ -105,8 +137,8 @@
         y: e.clientY - previousMousePosition.y,
       };
       const speed = 0.005;
-      if(model) model.rotation.y += delta.x * speed;
-      if(model) model.rotation.x += delta.y * speed;
+      grupo.rotation.y += delta.x * speed;
+      grupo.rotation.x += delta.y * speed;
       previousMousePosition = { x: e.clientX, y: e.clientY };
     });
 
