@@ -94,10 +94,14 @@
     );
 
     // --- Cilindros ---
-    const cylRadius = 0.02;
-    const cylHeight = 0.1;
+    const cylRadius = 2;
+    const cylHeight = 10;
     const cylGeometry = new THREE.CylinderGeometry(cylRadius, cylRadius, cylHeight, 32);
-    const cylMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+    const cylMaterial = new THREE.MeshStandardMaterial({ 
+    color: 0xff0000,
+    transparent: true,
+    opacity: 0.8 // ajuste de 0.0 a 1.0
+    });
 
     const cilindros = {};
 
@@ -110,16 +114,16 @@
     }
 
     // Coordenadas base (ajustáveis dependendo do tamanho do modelo)
-    const xOffset = 1;   // distância do eixo X
+    const xOffset = 1;
     const yTop = 0.5;
     const yBottom = -0.5;
     const zFront = 0.25;
     const zBack = -0.25;
 
-    criarCilindro("c1", xOffset, yTop, zFront);
-    criarCilindro("c2", xOffset, yTop, zBack);
-    criarCilindro("c3", xOffset, yBottom, zFront);
-    criarCilindro("c4", xOffset, yBottom, zBack);
+    criarCilindro("c1", 20, 24, 24+13);
+    criarCilindro("c2", 20, 25, 24);
+    criarCilindro("c3",20, 24, 11);
+    criarCilindro("c4", 20, 25, 11-14);
 
     // --- Controles manuais ---
     let isDragging = false;
@@ -169,7 +173,18 @@
         const comando = event.data.trim();
         console.log("📩 Comando recebido:", comando);
 
-        if(comando === "pass") {
+        // --- Controle de visibilidade dos cilindros ---
+        if(comando === "c1visivel") cilindros.c1.visible = true;
+        else if(comando === "c1invisivel") cilindros.c1.visible = false;
+        else if(comando === "c2visivel") cilindros.c2.visible = true;
+        else if(comando === "c2invisivel") cilindros.c2.visible = false;
+        else if(comando === "c3visivel") cilindros.c3.visible = true;
+        else if(comando === "c3invisivel") cilindros.c3.visible = false;
+        else if(comando === "c4visivel") cilindros.c4.visible = true;
+        else if(comando === "c4invisivel") cilindros.c4.visible = false;
+
+        // --- Status PASS/FAIL ---
+        else if(comando === "pass") {
           statusImg.src = "PASS.png";
           statusImg.style.display = "block";
         } else if(comando === "fail") {
