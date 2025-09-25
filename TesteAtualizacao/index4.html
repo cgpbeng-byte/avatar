@@ -67,26 +67,61 @@
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     document.body.appendChild(renderer.domElement);
 
-    // --- Luzes ---
-    const light = new THREE.DirectionalLight(0xffffff, 10);
-    light.position.set(5, 5, 5);
-    scene.add(light);
-    scene.add(new THREE.AmbientLight(0x333333));
+    // --- 🌟 Setup de Luz ---
+    const mainLight = new THREE.DirectionalLight(0xffffff, 2);
+    mainLight.position.set(5, 10, 5);
+    scene.add(mainLight);
+    scene.add(mainLight.target);
+
+    const fillLight = new THREE.DirectionalLight(0xffffff, 0.5);
+    fillLight.position.set(-5, 2, -5);
+    scene.add(fillLight);
+
+    const ambientLight = new THREE.AmbientLight(0x404040, 1);
+    scene.add(ambientLight);
 
     // --- Grupo principal (modelo + cilindros) ---
     const grupo = new THREE.Group();
-    scene.add(grupo);
+
+    // --- Pivot para rotação centralizada ---
+    const pivot = new THREE.Object3D();
+    scene.add(pivot);
+    pivot.add(grupo);
+
+    // --- Função para enquadrar a câmera ---
+    function ajustarCamera(obj, camera) {
+      const box = new THREE.Box3().setFromObject(obj);
+      const center = box.getCenter(new THREE.Vector3());
+      const size = box.getSize(new THREE.Vector3());
+
+      const maxDim = Math.max(size.x, size.y, size.z);
+      const fov = camera.fov * (Math.PI / 180);
+      let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+      cameraZ *= 1.5; 
+
+      camera.position.set(center.x, center.y, cameraZ);
+      camera.lookAt(center);
+
+      mainLight.target.position.copy(center);
+    }
 
     // --- Loader GLB ---
     const loader = new GLTFLoader();
     let model;
     loader.load(
-      'condensadora.glb', // ajuste o caminho do modelo
+      'condensadora.glb',
       (gltf) => {
         model = gltf.scene;
-        model.scale.set(0.2, 0.2, 0.2);
-        model.position.set(0, 0, 0);
+        model.scale.set(0.3, 0.3, 0.3); 
         grupo.add(model);
+
+        ajustarCamera(grupo, camera);
+
+        // 🌟 Centraliza o grupo no pivot
+        const box = new THREE.Box3().setFromObject(grupo);
+        const center = box.getCenter(new THREE.Vector3());
+        grupo.position.sub(center);
+
         console.log("✅ Modelo carregado");
       },
       (xhr) => console.log((xhr.loaded / xhr.total * 100).toFixed(2) + '% carregado'),
@@ -98,9 +133,9 @@
     const cylHeight = 10;
     const cylGeometry = new THREE.CylinderGeometry(cylRadius, cylRadius, cylHeight, 32);
     const cylMaterial = new THREE.MeshStandardMaterial({ 
-    color: 0xff0000,
-    transparent: true,
-    opacity: 0.8 // ajuste de 0.0 a 1.0
+      color: 0xff0000,
+      transparent: true,
+      opacity: 0.8
     });
 
     const cilindros = {};
@@ -113,19 +148,12 @@
       cilindros[nome] = cilindro;
     }
 
-    // Coordenadas base (ajustáveis dependendo do tamanho do modelo)
-    const xOffset = 1;
-    const yTop = 0.5;
-    const yBottom = -0.5;
-    const zFront = 0.25;
-    const zBack = -0.25;
-
     criarCilindro("c1", 20, 24, 24+13);
     criarCilindro("c2", 20, 25, 24);
-    criarCilindro("c3",20, 24, 11);
+    criarCilindro("c3", 20, 24, 11);
     criarCilindro("c4", 20, 25, 11-14);
 
-    // --- Controles manuais ---
+    // --- Controles manuais (drag para rotacionar) ---
     let isDragging = false;
     let previousMousePosition = { x: 0, y: 0 };
 
@@ -141,16 +169,16 @@
         y: e.clientY - previousMousePosition.y,
       };
       const speed = 0.005;
-      grupo.rotation.y += delta.x * speed;
-      grupo.rotation.x += delta.y * speed;
+      pivot.rotation.y += delta.x * speed; // rotaciona em torno do centro
+      pivot.rotation.x += delta.y * speed;
       previousMousePosition = { x: e.clientX, y: e.clientY };
     });
 
     // --- Zoom ---
     window.addEventListener('wheel', (e) => {
-      const zoomSpeed = 1;
+      const zoomSpeed = 0.01;
       camera.position.z += e.deltaY * zoomSpeed;
-      camera.position.z = Math.max(2, Math.min(100, camera.position.z));
+      camera.position.z = Math.max(2, Math.min(200, camera.position.z));
     });
 
     // --- Resize ---
@@ -173,7 +201,6 @@
         const comando = event.data.trim();
         console.log("📩 Comando recebido:", comando);
 
-        // --- Controle de visibilidade dos cilindros ---
         if(comando === "c1visivel") cilindros.c1.visible = true;
         else if(comando === "c1invisivel") cilindros.c1.visible = false;
         else if(comando === "c2visivel") cilindros.c2.visible = true;
@@ -183,7 +210,6 @@
         else if(comando === "c4visivel") cilindros.c4.visible = true;
         else if(comando === "c4invisivel") cilindros.c4.visible = false;
 
-        // --- Status PASS/FAIL ---
         else if(comando === "pass") {
           statusImg.src = "PASS.png";
           statusImg.style.display = "block";
